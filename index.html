@@ -77,10 +77,10 @@ body{background:#080818;font-family:'Press Start 2P',monospace;overflow:hidden;u
   </div>
 
   <div id="powerup-bar">
-    <div class="pu-slot" id="pu-shield"><div class="pu-icon" style="font-family:monospace;font-size:11px;color:#06b6d4">[SH]</div><div class="pu-label">SHIELD</div><div class="pu-timer" id="pt-shield" style="width:0%"></div></div>
-    <div class="pu-slot" id="pu-zap"><div class="pu-icon" style="font-family:monospace;font-size:11px;color:#ffff00">[ZP]</div><div class="pu-label">ZAP</div><div class="pu-timer" id="pt-zap" style="width:0%"></div></div>
-    <div class="pu-slot" id="pu-shrink"><div class="pu-icon" style="font-family:monospace;font-size:11px;color:#ec4899">[SZ]</div><div class="pu-label">SHRINK</div><div class="pu-timer" id="pt-shrink" style="width:0%"></div></div>
-    <div class="pu-slot" id="pu-repel"><div class="pu-icon" style="font-family:monospace;font-size:11px;color:#10b981">[RP]</div><div class="pu-label">REPEL</div><div class="pu-timer" id="pt-repel" style="width:0%"></div></div>
+    <div class="pu-slot" id="pu-shield"><div class="pu-icon">◇</div><div class="pu-label">SHIELD</div><div class="pu-timer" id="pt-shield" style="width:0%"></div></div>
+    <div class="pu-slot" id="pu-zap"><div class="pu-icon">⚡</div><div class="pu-label">ZAP</div><div class="pu-timer" id="pt-zap" style="width:0%"></div></div>
+    <div class="pu-slot" id="pu-shrink"><div class="pu-icon">◈</div><div class="pu-label">SHRINK</div><div class="pu-timer" id="pt-shrink" style="width:0%"></div></div>
+    <div class="pu-slot" id="pu-repel"><div class="pu-icon">↔</div><div class="pu-label">REPEL</div><div class="pu-timer" id="pt-repel" style="width:0%"></div></div>
   </div>
 
   <div id="level-banner">LEVEL UP!</div>
@@ -428,20 +428,87 @@ function drawFrame(){
       ctx.shadowBlur=0;
     } else {
       var t2=Date.now()/400;
-      ctx.globalAlpha=0.88+Math.sin(t2)*0.12;
-      // Terminal box background
-      ctx.fillStyle='#000a00';ctx.strokeStyle=pu.color;ctx.lineWidth=2;
-      var bx=pu.x-pu.w/2,by=pu.y-pu.h/2;
-      ctx.fillRect(bx,by,pu.w,pu.h);ctx.strokeRect(bx,by,pu.w,pu.h);
-      // Scanline effect
+      var alpha2=0.88+Math.sin(t2)*0.12;
+      ctx.globalAlpha=alpha2;
+      ctx.shadowColor=pu.color;ctx.shadowBlur=10+Math.sin(t2*2)*4;
+      ctx.strokeStyle=pu.color;ctx.lineWidth=2.5;
       ctx.fillStyle=pu.color+'22';
-      for(var sl=0;sl<pu.h;sl+=3) ctx.fillRect(bx,by+sl,pu.w,1);
-      // Glow
-      ctx.shadowColor=pu.color;ctx.shadowBlur=8+Math.sin(t2*2)*4;
-      // Terminal text
-      ctx.font='bold 10px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillStyle=pu.color;
-      ctx.fillText(puIcons[pu.type],pu.x,pu.y);
+      var s=pu.w*0.38; // icon half-size
+      var px=pu.x,py=pu.y;
+
+      if(pu.type==='shield'){
+        // Monad-style shield: rounded diamond/kite outline
+        ctx.beginPath();
+        ctx.moveTo(px, py-s*1.1);
+        ctx.bezierCurveTo(px+s*0.6,py-s*0.6, px+s,py, px,py+s*1.1);
+        ctx.bezierCurveTo(px-s,py, px-s*0.6,py-s*0.6, px,py-s*1.1);
+        ctx.fill();ctx.stroke();
+        // Inner notch
+        ctx.beginPath();
+        ctx.moveTo(px,py-s*0.45);
+        ctx.bezierCurveTo(px+s*0.28,py-s*0.1, px+s*0.4,py+s*0.2, px,py+s*0.55);
+        ctx.bezierCurveTo(px-s*0.4,py+s*0.2, px-s*0.28,py-s*0.1, px,py-s*0.45);
+        ctx.stroke();
+
+      } else if(pu.type==='zap'){
+        // Lightning bolt — angular, like Monad's sharp corners
+        ctx.beginPath();
+        ctx.moveTo(px+s*0.2, py-s*1.1);
+        ctx.lineTo(px-s*0.15, py-s*0.05);
+        ctx.lineTo(px+s*0.25, py-s*0.05);
+        ctx.lineTo(px-s*0.2, py+s*1.1);
+        ctx.lineTo(px+s*0.15, py+s*0.1);
+        ctx.lineTo(px-s*0.2, py+s*0.1);
+        ctx.closePath();
+        ctx.fill();ctx.stroke();
+
+      } else if(pu.type==='shrink'){
+        // Four inward-pointing arrows forming a compress symbol
+        ctx.lineWidth=2;
+        var arr=s*0.55;
+        // Top-left arrow pointing inward
+        [[1,1],[-1,1],[1,-1],[-1,-1]].forEach(function(d){
+          var dx=d[0],dy=d[1];
+          ctx.beginPath();
+          ctx.moveTo(px+dx*arr,py+dy*arr);
+          ctx.lineTo(px+dx*s*0.9,py+dy*s*0.25);
+          ctx.moveTo(px+dx*arr,py+dy*arr);
+          ctx.lineTo(px+dx*s*0.25,py+dy*s*0.9);
+          ctx.stroke();
+        });
+        // Centre dot
+        ctx.beginPath();ctx.arc(px,py,s*0.18,0,Math.PI*2);
+        ctx.fill();ctx.stroke();
+
+      } else if(pu.type==='repel'){
+        // Two outward curved arrows — repel/magnet style
+        ctx.lineWidth=2.5;
+        // Left arrow pointing left
+        ctx.beginPath();
+        ctx.moveTo(px-s*0.2,py);
+        ctx.lineTo(px-s,py);
+        ctx.moveTo(px-s*0.75,py-s*0.3);
+        ctx.lineTo(px-s,py);
+        ctx.lineTo(px-s*0.75,py+s*0.3);
+        ctx.stroke();
+        // Right arrow pointing right
+        ctx.beginPath();
+        ctx.moveTo(px+s*0.2,py);
+        ctx.lineTo(px+s,py);
+        ctx.moveTo(px+s*0.75,py-s*0.3);
+        ctx.lineTo(px+s,py);
+        ctx.lineTo(px+s*0.75,py+s*0.3);
+        ctx.stroke();
+        // Centre repel lines
+        for(var ri=-1;ri<=1;ri++){
+          ctx.globalAlpha=alpha2*(0.4+Math.abs(ri)*0.3);
+          ctx.beginPath();
+          ctx.moveTo(px+ri*s*0.12,py-s*0.5);
+          ctx.lineTo(px+ri*s*0.12,py+s*0.5);
+          ctx.stroke();
+        }
+        ctx.globalAlpha=alpha2;
+      }
       ctx.shadowBlur=0;
     }
     ctx.restore();
